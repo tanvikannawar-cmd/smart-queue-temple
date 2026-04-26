@@ -355,6 +355,7 @@
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById('panel-' + name).classList.add('active');
     if (name === 'live') loadQueue();
+    setInterval(() => { if (document.getElementById('panel-live').classList.contains('active')) loadQueue(); }, 10000);
   }
 
   async function joinQueue() {
