@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Temple Queue System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --saffron:#E8640A; --deep-saffron:#C4500A;
+      --gold:#D4A017;    --gold-light:#F2C84B;
+      --cream:#FDF6E3;   --brown-dark:#2C1A0E;
+      --brown-mid:#5C3317; --maroon:#7B1E1E;
+      --green-sacred:#2D5016; --white-pure:#FFFEF9;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Crimson Pro',Georgia,serif;background:var(--brown-dark);color:var(--cream);min-height:100vh;}
+    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(232,100,10,.12) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(212,160,23,.10) 0%,transparent 50%);pointer-events:none;z-index:0;}
+    .container{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:36px 20px 60px;}
+
+    header{text-align:center;margin-bottom:28px;animation:fadeDown .7s ease both;}
+    .om{font-size:2.2rem;color:var(--gold);display:block;margin-bottom:6px;animation:glow 3s ease-in-out infinite alternate;}
+    @keyframes glow{from{filter:drop-shadow(0 0 8px rgba(212,160,23,.4))}to{filter:drop-shadow(0 0 22px rgba(232,100,10,.7))}}
+    h1{font-family:'Cinzel',serif;font-size:clamp(1.4rem,4vw,2.1rem);color:var(--gold-light);letter-spacing:.08em;text-shadow:0 2px 12px rgba(212,160,23,.3);}
+    .subtitle{margin-top:8px;font-size:1rem;font-style:italic;color:rgba(253,246,227,.55);}
+    .divider{display:flex;align-items:center;gap:12px;margin:14px auto;max-width:280px;}
+    .divider-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+    .divider-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px var(--gold);}
+
+    .live-banner{
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+      background:linear-gradient(135deg,rgba(92,51,23,.7),rgba(44,26,14,.9));
+      border:1px solid rgba(212,160,23,.3);border-radius:14px;
+      padding:18px 24px;margin-bottom:24px;
+      box-shadow:0 2px 20px rgba(0,0,0,.4),inset 0 1px 0 rgba(212,160,23,.12);
+      animation:fadeUp .6s ease .1s both;
+    }
+    .live-left{display:flex;align-items:center;gap:14px;}
+    .live-dot{width:10px;height:10px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px #4ade80;animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.2)}}
+    .live-label{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);}
+    .live-count{font-family:'Cinzel',serif;font-size:2.4rem;font-weight:700;line-height:1;
+      background:linear-gradient(135deg,var(--gold-light),var(--saffron));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .live-sub{font-size:.88rem;font-style:italic;color:rgba(253,246,227,.4);}
+    .live-updated{font-size:.8rem;font-style:italic;color:rgba(253,246,227,.35);text-align:right;}
+    .live-badge{padding:6px 14px;border-radius:20px;font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.08em;font-weight:600;}
+    .live-badge.low     {background:rgba(45,80,22,.4);border:1px solid rgba(100,180,50,.4);color:#90d060;}
+    .live-badge.moderate{background:rgba(180,120,10,.3);border:1px solid rgba(212,160,23,.4);color:var(--gold-light);}
+    .live-badge.high    {background:rgba(123,30,30,.4);border:1px solid rgba(200,60,60,.4);color:#f08080;}
+
+    .tabs{display:flex;gap:4px;margin-bottom:20px;background:rgba(44,26,14,.6);border-radius:12px;padding:4px;border:1px solid rgba(212,160,23,.15);}
+    .tab{flex:1;padding:11px;border:none;border-radius:9px;cursor:pointer;font-family:'Cinzel',serif;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;transition:all .25s;background:transparent;color:rgba(253,246,227,.45);}
+    .tab.active{background:linear-gradient(135deg,var(--saffron),var(--deep-saffron));color:var(--white-pure);box-shadow:0 2px 12px rgba(232,100,10,.35);}
+
+    .card{background:linear-gradient(145deg,rgba(92,51,23,.45),rgba(44,26,14,.8));border:1px solid rgba(212,160,23,.2);border-radius:16px;padding:32px;box-shadow:0 4px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(212,160,23,.12);animation:fadeUp .7s ease .2s both;}
+    .panel{display:none;} .panel.active{display:block;}
+
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;}
+    .form-group{display:flex;flex-direction:column;gap:7px;}
+    .form-group.full{grid-column:1/-1;}
+    label{font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);}
+    .input-wrap{position:relative;}
+    .input-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:1rem;pointer-events:none;opacity:.65;}
+    input,select{width:100%;padding:11px 13px 11px 38px;background:rgba(44,26,14,.7);border:1px solid rgba(212,160,23,.22);border-radius:8px;color:var(--cream);font-family:'Crimson Pro',serif;font-size:1.05rem;transition:all .22s;appearance:none;-webkit-appearance:none;}
+    input:focus,select:focus{outline:none;border-color:var(--gold);background:rgba(92,51,23,.5);box-shadow:0 0 0 3px rgba(212,160,23,.1);}
+    input::placeholder{color:rgba(253,246,227,.28);}
+    select option{background:var(--brown-dark);color:var(--cream);}
+
+    .range-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+    .range-val{font-family:'Cinzel',serif;font-size:1.05rem;color:var(--gold-light);font-weight:600;}
+    .range-hint{font-size:.82rem;color:rgba(253,246,227,.35);font-style:italic;}
+    input[type="range"]{padding:0;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--saffron),var(--gold));border:none;cursor:pointer;}
+    input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--gold-light);border:2px solid var(--saffron);box-shadow:0 0 8px rgba(232,100,10,.5);cursor:pointer;}
+
+    .btn{width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--saffron),var(--deep-saffron));color:var(--white-pure);font-family:'Cinzel',serif;font-size:.92rem;font-weight:600;letter-spacing:.1em;cursor:pointer;transition:all .28s;position:relative;overflow:hidden;box-shadow:0 4px 20px rgba(232,100,10,.4);}
+    .btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--gold),var(--saffron));opacity:0;transition:opacity .28s;}
+    .btn:hover::before{opacity:1;} .btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(232,100,10,.5);} .btn:active{transform:translateY(0);}
+    .btn span{position:relative;z-index:1;}
+    .btn.loading span::after{content:'';display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;margin-left:9px;vertical-align:middle;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .err{margin-top:16px;padding:13px 17px;background:rgba(123,30,30,.3);border:1px solid rgba(200,60,60,.3);border-radius:9px;color:#f08080;font-size:.93rem;display:none;}
+    .err.show{display:block;animation:fadeUp .4s ease both;}
+
+    .token-card{margin-top:22px;border-radius:14px;overflow:hidden;display:none;}
+    .token-card.show{display:block;animation:fadeUp .5s ease both;}
+    .result-header{background:linear-gradient(135deg,rgba(212,160,23,.22),rgba(232,100,10,.16));border:1px solid rgba(212,160,23,.3);border-bottom:none;border-radius:14px 14px 0 0;padding:14px 20px;display:flex;align-items:center;gap:10px;}
+    .result-header h3{font-family:'Cinzel',serif;font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);}
+    .result-body{background:rgba(44,26,14,.65);border:1px solid rgba(212,160,23,.2);border-top:none;border-radius:0 0 14px 14px;padding:26px 20px;}
+
+    .token-big{text-align:center;margin-bottom:24px;}
+    .token-number{font-family:'Cinzel',serif;font-size:5rem;font-weight:700;line-height:1;background:linear-gradient(135deg,var(--gold-light),var(--saffron));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .token-lbl{font-family:'Cinzel',serif;font-size:.66rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-top:4px;}
+
+    .stats-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:22px;}
+    .stat-box{flex:1;min-width:100px;text-align:center;background:rgba(92,51,23,.35);border:1px solid rgba(212,160,23,.15);border-radius:10px;padding:14px 10px;}
+    .stat-box .val{font-family:'Cinzel',serif;font-size:1.8rem;font-weight:700;color:var(--gold-light);line-height:1;}
+    .stat-box .lbl{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(253,246,227,.45);margin-top:5px;}
+
+    .prog-wrap{} .prog-lbl{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(253,246,227,.35);margin-bottom:6px;}
+    .prog-track{height:8px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden;}
+    .prog-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green-sacred),var(--gold),var(--saffron),var(--maroon));transition:width 1s cubic-bezier(.4,0,.2,1);width:0%;}
+    .joined-info{text-align:center;margin-top:14px;font-size:.87rem;font-style:italic;color:rgba(253,246,227,.38);}
+
+    .pred-result{margin-top:22px;border-radius:14px;overflow:hidden;display:none;}
+    .pred-result.show{display:block;animation:fadeUp .5s ease both;}
+    .pred-body{background:rgba(44,26,14,.65);border:1px solid rgba(212,160,23,.2);border-top:none;border-radius:0 0 14px 14px;padding:26px 20px;display:flex;align-items:center;justify-content:space-around;flex-wrap:wrap;gap:18px;}
+    .pred-stat{text-align:center;}
+    .pred-stat .big{font-family:'Cinzel',serif;font-size:2.8rem;font-weight:700;line-height:1;background:linear-gradient(135deg,var(--gold-light),var(--saffron));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .pred-stat .unit{font-size:.9rem;color:rgba(253,246,227,.45);font-style:italic;margin-top:4px;}
+    .pred-stat .lbl{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-top:8px;}
+    .crowd-badge{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:50px;font-family:'Cinzel',serif;font-size:.92rem;font-weight:600;letter-spacing:.05em;}
+    .crowd-badge.Low     {background:rgba(45,80,22,.4);border:1px solid rgba(100,180,50,.4);color:#90d060;}
+    .crowd-badge.Moderate{background:rgba(180,120,10,.3);border:1px solid rgba(212,160,23,.4);color:var(--gold-light);}
+    .crowd-badge.High    {background:rgba(123,30,30,.4);border:1px solid rgba(200,60,60,.4);color:#f08080;}
+
+    .queue-list{margin-top:22px;display:none;} .queue-list.show{display:block;animation:fadeUp .5s ease both;}
+    .ql-header{background:linear-gradient(135deg,rgba(212,160,23,.22),rgba(232,100,10,.16));border:1px solid rgba(212,160,23,.3);border-bottom:none;border-radius:14px 14px 0 0;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;}
+    .ql-header h3{font-family:'Cinzel',serif;font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);}
+    .ql-count{font-family:'Cinzel',serif;font-size:.76rem;color:var(--gold-light);background:rgba(212,160,23,.15);padding:4px 12px;border-radius:20px;border:1px solid rgba(212,160,23,.25);}
+    .ql-table{background:rgba(44,26,14,.65);border:1px solid rgba(212,160,23,.2);border-top:none;border-radius:0 0 14px 14px;overflow:hidden;}
+    .q-row{display:grid;grid-template-columns:55px 75px 1fr 85px;padding:12px 20px;align-items:center;border-bottom:1px solid rgba(212,160,23,.08);transition:background .2s;}
+    .q-row:last-child{border-bottom:none;} .q-row:hover{background:rgba(212,160,23,.04);}
+    .q-row.head{background:rgba(92,51,23,.4);font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);border-bottom:1px solid rgba(212,160,23,.15);}
+    .q-row .pos{font-family:'Cinzel',serif;font-size:1.05rem;font-weight:600;color:var(--gold-light);}
+    .q-row .tok{font-family:'Cinzel',serif;font-size:.88rem;color:rgba(253,246,227,.55);}
+    .q-row .nm{font-size:1.02rem;color:var(--cream);}
+    .q-row .tm{font-size:.86rem;color:rgba(253,246,227,.4);font-style:italic;text-align:right;}
+    .empty-q{padding:28px;text-align:center;font-style:italic;color:rgba(253,246,227,.35);}
+
+    .camera-box{margin-top:20px;padding:18px 20px;background:rgba(45,80,22,.2);border:1px solid rgba(100,180,50,.25);border-radius:12px;}
+    .camera-box h4{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#90d060;margin-bottom:10px;}
+    .camera-box p{font-size:.93rem;color:rgba(253,246,227,.6);line-height:1.6;}
+    .camera-box code{background:rgba(0,0,0,.3);padding:2px 8px;border-radius:4px;font-family:monospace;color:var(--gold-light);font-size:.9rem;}
+
+    @keyframes fadeDown{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeUp  {from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)}}
+    footer{text-align:center;margin-top:38px;font-size:.82rem;font-style:italic;color:rgba(253,246,227,.22);}
+
+    @media(max-width:580px){
+      .form-grid{grid-template-columns:1fr;} .card{padding:20px 14px;}
+      .stats-row{flex-direction:column;}
+      .q-row{grid-template-columns:48px 65px 1fr;} .q-row .tm{display:none;}
+      .live-banner{flex-direction:column;align-items:flex-start;}
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <span class="om">🕉</span>
+    <h1>Temple Queue System</h1>
+    <p class="subtitle">Join the queue · Know your turn · Plan your visit</p>
+    <div class="divider"><div class="divider-line"></div><div class="divider-dot"></div><div class="divider-line"></div></div>
+  </header>
+
+  <!-- Live Crowd Banner -->
+  <div class="live-banner">
+    <div class="live-left">
+      <div class="live-dot"></div>
+      <div>
+        <div class="live-label">Live Camera Count</div>
+        <div class="live-count" id="live-num">--</div>
+        <div class="live-sub">people at temple right now</div>
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <div class="live-badge" id="live-badge" style="margin-bottom:8px;">--</div>
+      <div class="live-updated" id="live-updated">Camera not connected yet</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('join')">🎫 Join Queue</button>
+    <button class="tab" onclick="switchTab('predict')">🔮 Predict Wait</button>
+    <button class="tab" onclick="switchTab('live')">📋 Live Queue</button>
+  </div>
+
+  <div class="card">
+
+    <!-- TAB 1: JOIN QUEUE -->
+    <div class="panel active" id="panel-join">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label for="visitor-name">Your Full Name</label>
+          <div class="input-wrap">
+            <span class="input-icon">🙏</span>
+            <input type="text" id="visitor-name" placeholder="e.g. Tanvi Sharma"
+              onkeydown="if(event.key==='Enter') joinQueue()"/>
+          </div>
+        </div>
+      </div>
+      <button class="btn" id="join-btn" onclick="joinQueue()">
+        <span>🎫 &nbsp; Get My Token Number</span>
+      </button>
+      <div class="err" id="join-err"></div>
+      <div class="token-card" id="token-card">
+        <div class="result-header"><span>🎫</span><h3>Your Queue Token</h3></div>
+        <div class="result-body">
+          <div class="token-big">
+            <div class="token-number" id="tk-num">--</div>
+            <div class="token-lbl">Token Number</div>
+          </div>
+          <div class="stats-row">
+            <div class="stat-box"><div class="val" id="tk-pos">--</div><div class="lbl">Your Position</div></div>
+            <div class="stat-box"><div class="val" id="tk-ahead">--</div><div class="lbl">People Ahead</div></div>
+            <div class="stat-box"><div class="val" id="tk-wait">--</div><div class="lbl">Est. Wait (min)</div></div>
+            <div class="stat-box"><div class="val" id="tk-total">--</div><div class="lbl">Total Waiting</div></div>
+          </div>
+          <div class="prog-wrap">
+            <div class="prog-lbl">Queue progress</div>
+            <div class="prog-track"><div class="prog-fill" id="tk-bar"></div></div>
+          </div>
+          <div class="joined-info" id="tk-time"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: PREDICT -->
+    <div class="panel" id="panel-predict">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="time_hour">Hour of Visit</label>
+          <div class="input-wrap"><span class="input-icon">🕐</span>
+            <select id="time_hour">
+              <option value="">Select hour</option>
+              <option value="5">5:00 AM</option><option value="6">6:00 AM</option>
+              <option value="7">7:00 AM</option><option value="8">8:00 AM</option>
+              <option value="9">9:00 AM</option><option value="10" selected>10:00 AM</option>
+              <option value="11">11:00 AM</option><option value="12">12:00 PM</option>
+              <option value="13">1:00 PM</option><option value="14">2:00 PM</option>
+              <option value="15">3:00 PM</option><option value="16">4:00 PM</option>
+              <option value="17">5:00 PM</option><option value="18">6:00 PM</option>
+              <option value="19">7:00 PM</option><option value="20">8:00 PM</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="day_of_week">Day of Week</label>
+          <div class="input-wrap"><span class="input-icon">📅</span>
+            <select id="day_of_week">
+              <option value="">Select day</option>
+              <option value="0">Monday</option><option value="1">Tuesday</option>
+              <option value="2">Wednesday</option><option value="3">Thursday</option>
+              <option value="4">Friday</option><option value="5">Saturday</option>
+              <option value="6" selected>Sunday</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="festival">Festival Day?</label>
+          <div class="input-wrap"><span class="input-icon">🪔</span>
+            <select id="festival">
+              <option value="0" selected>No Festival</option>
+              <option value="1">Yes, Festival Day</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="weather">Weather</label>
+          <div class="input-wrap"><span class="input-icon">🌤</span>
+            <select id="weather">
+              <option value="0">Rainy</option>
+              <option value="1" selected>Clear / Sunny</option>
+              <option value="2">Cloudy</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>Current Crowd Count</label>
+          <div class="range-row">
+            <span class="range-hint">Few people</span>
+            <span class="range-val" id="crowd-display">150 people</span>
+            <span class="range-hint">Very crowded</span>
+          </div>
+          <input type="range" id="crowd_count" min="0" max="1000" step="10" value="150"
+            oninput="document.getElementById('crowd-display').textContent=this.value+' people'"/>
+        </div>
+      </div>
+      <button class="btn" id="pred-btn" onclick="predictWait()">
+        <span>🔮 &nbsp; Predict Waiting Time</span>
+      </button>
+      <div class="err" id="pred-err"></div>
+      <div class="pred-result" id="pred-result">
+        <div class="result-header"><span>✨</span><h3>Prediction Result</h3></div>
+        <div class="pred-body">
+          <div class="pred-stat">
+            <div class="big" id="pred-time">--</div>
+            <div class="unit">minutes</div>
+            <div class="lbl">Estimated Wait</div>
+          </div>
+          <div class="pred-stat">
+            <div class="crowd-badge" id="pred-badge">--</div>
+            <div class="lbl" style="margin-top:12px;">Crowd Level</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: LIVE QUEUE -->
+    <div class="panel" id="panel-live">
+      <button class="btn" id="refresh-btn" onclick="loadQueue()" style="margin-bottom:18px;">
+        <span>🔄 &nbsp; Refresh Live Queue</span>
+      </button>
+      <div class="err" id="live-err"></div>
+      <div class="queue-list" id="queue-list">
+        <div class="ql-header">
+          <h3>📋 People Waiting</h3>
+          <span class="ql-count" id="q-count">0 waiting</span>
+        </div>
+        <div class="ql-table" id="q-table"></div>
+      </div>
+      <div class="camera-box" style="margin-top:24px;">
+        <h4>📷 YOLOv8 Camera Integration</h4>
+        <p>
+          To enable live crowd counting from your webcam, open a <strong>new PowerShell window</strong> and run:<br/><br/>
+          <code>python camera_crowd.py</code><br/><br/>
+          The camera will detect people in real time and the <strong>Live Camera Count</strong> banner above will update automatically every 5 seconds.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>Powered by YOLOv8 + Machine Learning &nbsp;·&nbsp; Smart Queue Management System</footer>
+</div>
+
+<script>
+  const API = 'http://127.0.0.1:5000';
+
+  async function pollCrowd() {
+    try {
+      const res  = await fetch(API + '/crowd/live');
+      const data = await res.json();
+      if (data.status === 'success') {
+        const c = data.count;
+        document.getElementById('live-num').textContent     = c;
+        document.getElementById('live-updated').textContent = 'Last updated: ' + data.updated_at;
+        const badge = document.getElementById('live-badge');
+        if (c < 50)       { badge.textContent = '🟢 Low Crowd';      badge.className = 'live-badge low'; }
+        else if (c < 150) { badge.textContent = '🟡 Moderate Crowd'; badge.className = 'live-badge moderate'; }
+        else              { badge.textContent = '🔴 High Crowd';     badge.className = 'live-badge high'; }
+      }
+    } catch {}
+  }
+  pollCrowd();
+  setInterval(pollCrowd, 5000);
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t,i) =>
+      t.classList.toggle('active', ['join','predict','live'][i] === name));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    if (name === 'live') loadQueue();
+  }
+
+  async function joinQueue() {
+    const name  = document.getElementById('visitor-name').value.trim();
+    const errEl = document.getElementById('join-err');
+    const btn   = document.getElementById('join-btn');
+    errEl.classList.remove('show');
+    document.getElementById('token-card').classList.remove('show');
+    if (!name) { showErr(errEl,'Please enter your name.'); return; }
+    btn.classList.add('loading'); btn.disabled = true;
+    try {
+      const res  = await fetch(API + '/queue/join', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ name })
+      });
+      const data = await res.json();
+      if (data.status === 'success' || data.status === 'already_joined') showToken(data);
+      else showErr(errEl, data.error || 'Could not join queue.');
+    } catch { showErr(errEl,'Cannot connect to server. Make sure Flask is running.'); }
+    finally { btn.classList.remove('loading'); btn.disabled = false; }
+  }
+
+  function showToken(d) {
+    document.getElementById('tk-num').textContent   = d.token;
+    document.getElementById('tk-pos').textContent   = d.position;
+    document.getElementById('tk-ahead').textContent = d.position - 1;
+    document.getElementById('tk-total').textContent = d.total_waiting;
+    document.getElementById('tk-wait').textContent  = (d.position - 1) * 5;
+    document.getElementById('tk-time').textContent  = '⏰ Joined at ' + d.joined_at;
+    const pct = d.total_waiting > 1 ? Math.max(5, 100-((d.position-1)/d.total_waiting)*100) : 100;
+    setTimeout(() => { document.getElementById('tk-bar').style.width = pct + '%'; }, 150);
+    document.getElementById('token-card').classList.add('show');
+  }
+
+  async function predictWait() {
+    const time_hour   = document.getElementById('time_hour').value;
+    const day_of_week = document.getElementById('day_of_week').value;
+    const festival    = document.getElementById('festival').value;
+    const weather     = document.getElementById('weather').value;
+    const crowd_count = document.getElementById('crowd_count').value;
+    const errEl = document.getElementById('pred-err');
+    const btn   = document.getElementById('pred-btn');
+    errEl.classList.remove('show');
+    document.getElementById('pred-result').classList.remove('show');
+    if (!time_hour || !day_of_week) { showErr(errEl,'Please select hour and day.'); return; }
+    btn.classList.add('loading'); btn.disabled = true;
+    try {
+      const res  = await fetch(API + '/predict', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          time_hour:parseInt(time_hour), day_of_week:parseInt(day_of_week),
+          festival:parseInt(festival),   weather:parseInt(weather),
+          crowd_count:parseInt(crowd_count)
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        document.getElementById('pred-time').textContent = data.waiting_time_minutes;
+        const badge = document.getElementById('pred-badge');
+        const icons = {Low:'🟢',Moderate:'🟡',High:'🔴'};
+        badge.textContent = (icons[data.crowd_level]||'') + ' ' + data.crowd_level;
+        badge.className   = 'crowd-badge ' + data.crowd_level;
+        document.getElementById('pred-result').classList.add('show');
+      } else showErr(errEl, data.error || 'Prediction failed.');
+    } catch { showErr(errEl,'Cannot connect to server.'); }
+    finally { btn.classList.remove('loading'); btn.disabled = false; }
+  }
+
+  async function loadQueue() {
+    const errEl = document.getElementById('live-err');
+    const btn   = document.getElementById('refresh-btn');
+    errEl.classList.remove('show');
+    btn.classList.add('loading'); btn.disabled = true;
+    try {
+      const res  = await fetch(API + '/queue/status');
+      const data = await res.json();
+      document.getElementById('q-count').textContent = data.total_waiting + ' waiting';
+      const table = document.getElementById('q-table');
+      if (data.total_waiting === 0) {
+        table.innerHTML = '<div class="empty-q">🙏 No one is waiting right now</div>';
+      } else {
+        table.innerHTML =
+          '<div class="q-row head"><span>Pos.</span><span>Token</span><span>Name</span><span style="text-align:right">Joined</span></div>' +
+          data.queue.map(p =>
+            `<div class="q-row">
+              <span class="pos">#${p.position}</span>
+              <span class="tok">T-${p.token}</span>
+              <span class="nm">${p.name}</span>
+              <span class="tm">${p.joined_at}</span>
+            </div>`
+          ).join('');
+      }
+      document.getElementById('queue-list').classList.add('show');
+    } catch { showErr(errEl,'Cannot connect to server.'); }
+    finally { btn.classList.remove('loading'); btn.disabled = false; }
+  }
+
+  function showErr(el, msg) { el.textContent = '⚠️ ' + msg; el.classList.add('show'); }
+</script>
+</body>
+</html>
