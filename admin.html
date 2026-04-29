@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Temple Admin Panel</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root {
       --saffron:#E8640A; --deep-saffron:#C4500A;
@@ -96,6 +97,19 @@
     .divider{display:flex;align-items:center;gap:12px;margin:20px 0;}
     .divider-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(212,160,23,.3),transparent);}
 
+    /* QR Code Section */
+    .qr-section{margin-bottom:24px;}
+    .qr-section h3{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+    .qr-grid{display:flex;gap:14px;}
+    .qr-box{flex:1;text-align:center;background:rgba(92,51,23,.35);border:1px solid rgba(212,160,23,.15);border-radius:12px;padding:18px 12px;}
+    .qr-box .qr-label{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+    .qr-box .qr-canvas{background:white;border-radius:8px;padding:8px;display:inline-block;margin-bottom:10px;}
+    .qr-box .qr-desc{font-size:.82rem;font-style:italic;color:rgba(253,246,227,.45);}
+    .qr-token-input{display:flex;gap:8px;margin-bottom:14px;}
+    .qr-token-input input{flex:1;padding:10px 13px;background:rgba(44,26,14,.7);border:1px solid rgba(212,160,23,.22);border-radius:8px;color:var(--cream);font-family:'Crimson Pro',serif;font-size:1rem;}
+    .qr-token-input input:focus{outline:none;border-color:var(--gold);}
+    .qr-token-input button{padding:10px 16px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--saffron),var(--deep-saffron));color:white;font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.08em;cursor:pointer;white-space:nowrap;}
+
     footer{text-align:center;margin-top:38px;font-size:.82rem;font-style:italic;color:rgba(253,246,227,.22);}
 
     @media(max-width:500px){
@@ -172,6 +186,34 @@
 
     <div class="divider"><div class="divider-line"></div></div>
 
+    <!-- QR CODES -->
+    <div class="qr-section">
+      <h3>📱 QR Codes</h3>
+      <div class="qr-grid">
+
+        <!-- QR 1: Join queue -->
+        <div class="qr-box">
+          <div class="qr-label">🕌 Join Queue</div>
+          <div class="qr-canvas" id="qr-app"></div>
+          <div class="qr-desc">Scan to open the temple app & join queue</div>
+        </div>
+
+        <!-- QR 2: Token status -->
+        <div class="qr-box">
+          <div class="qr-label">🎟 Check Token</div>
+          <div class="qr-token-input">
+            <input type="number" id="qr-token-num" placeholder="Token #" min="1"/>
+            <button onclick="generateTokenQR()">Generate</button>
+          </div>
+          <div class="qr-canvas" id="qr-token"></div>
+          <div class="qr-desc" id="qr-token-desc">Enter token number above</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="divider"><div class="divider-line"></div></div>
+
     <button class="btn red" onclick="resetQueue()">
       <span>🔄 &nbsp; Reset Entire Queue (End of Day)</span>
     </button>
@@ -184,9 +226,10 @@
 <script>
   // ── Dynamic API URL ───────────────────────────────────────────────────────
   // Automatically picks local server when developing, production when deployed
- const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
-const API = isLocal ? 'http://localhost:5000' : 'https://temple-queue-prediction.onrender.com';
-
+  const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
+  const API = isLocal
+    ? 'http://localhost:5000'
+    : 'https://temple-queue-prediction.onrender.com';
 
   // Show which server is being used
   const badge = document.getElementById('server-badge');
@@ -259,6 +302,7 @@ const API = isLocal ? 'http://localhost:5000' : 'https://temple-queue-prediction
         document.getElementById('admin-section').style.display = 'block';
         loadQueue();
         setInterval(loadQueue, 10000);
+        setTimeout(generateAppQR, 300); // generate app QR after panel renders
       } else {
         errEl.textContent = '⚠️ Wrong password. Try again.';
         errEl.classList.add('show');
@@ -367,6 +411,42 @@ const API = isLocal ? 'http://localhost:5000' : 'https://temple-queue-prediction
         alert('✅ Crowd count updated to ' + crowdCount);
       }
     } catch { alert('Cannot connect to server.'); }
+  }
+
+  // ── QR Codes ──────────────────────────────────────────────────────────────
+  let appQR = null;
+  let tokenQR = null;
+
+  function generateAppQR() {
+    const appUrl = API + '/app';
+    document.getElementById('qr-app').innerHTML = '';
+    appQR = new QRCode(document.getElementById('qr-app'), {
+      text: appUrl,
+      width: 140,
+      height: 140,
+      colorDark: '#2C1A0E',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+
+  function generateTokenQR() {
+    const token = document.getElementById('qr-token-num').value.trim();
+    if (!token || isNaN(token) || parseInt(token) < 1) {
+      alert('Please enter a valid token number.');
+      return;
+    }
+    const tokenUrl = API + '/queue/token/' + parseInt(token);
+    document.getElementById('qr-token').innerHTML = '';
+    tokenQR = new QRCode(document.getElementById('qr-token'), {
+      text: tokenUrl,
+      width: 140,
+      height: 140,
+      colorDark: '#2C1A0E',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    document.getElementById('qr-token-desc').textContent = 'Scan to check status of Token T-' + token;
   }
 
   // ── Reset Queue ───────────────────────────────────────────────────────────
