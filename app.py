@@ -18,6 +18,9 @@ queue         = []
 token_counter = 0
 live_crowd    = {"count": 0, "updated_at": None}
 
+# Admin password
+ADMIN_PASSWORD = "Temple123"
+
 REQUIRED_FIELDS = ["time_hour", "day_of_week", "festival", "weather", "crowd_count"]
 
 
@@ -40,6 +43,12 @@ def validate_input(data):
 @app.route('/app')
 def serve_frontend():
     return send_from_directory('.', 'index.html')
+
+
+# ── Serve admin panel ─────────────────────────────────────────────
+@app.route('/admin')
+def serve_admin():
+    return send_from_directory('.', 'admin.html')
 
 
 # ── Home ──────────────────────────────────────────────────────────
@@ -187,15 +196,98 @@ def token_status(token):
                         "name": entry["name"], "queue_status": "done"}), 200
 
     return jsonify({
-        "status":                "success",
-        "token":                 token,
-        "name":                  entry["name"],
-        "position":              position,
-        "total_waiting":         len(waiting),
-        "people_ahead":          position - 1,
+        "status":                 "success",
+        "token":                  token,
+        "name":                   entry["name"],
+        "position":               position,
+        "total_waiting":          len(waiting),
+        "people_ahead":           position - 1,
         "estimated_wait_minutes": (position - 1) * 5,
-        "joined_at":             entry["joined_at"],
-        "queue_status":          "waiting"
+        "joined_at":              entry["joined_at"],
+        "queue_status":           "waiting"
+    }), 200
+
+
+# ── Admin: verify password ────────────────────────────────────────
+@app.route("/admin/login", methods=["POST"])
+def admin_login():
+    data = request.get_json()
+    if not data or data.get("password") != ADMIN_PASSWORD:
+        return jsonify({"status": "failed", "error": "Wrong password"}), 401
+    return jsonify({"status": "success", "message": "Login successful"}), 200
+
+
+# ── Admin: call next token ────────────────────────────────────────
+@app.route("/admin/call-next", methods=["POST"])
+def call_next():
+    data = request.get_json()
+    if not data or data.get("password") != ADMIN_PASSWORD:
+        return jsonify({"status": "failed", "error": "Unauthorized"}), 401
+
+    waiting = [p for p in queue if p["status"] == "waiting"]
+    if not waiting:
+        return jsonify({"status": "failed", "error": "No one in queue"}), 400
+
+    next_person = waiting[0]
+    next_person["status"] = "done"
+    next_person["called_at"] = datetime.now().strftime("%I:%M %p")
+
+    remaining = sum(1 for p in queue if p["status"] == "waiting")
+
+    return jsonify({
+        "status":       "success",
+        "called_token": next_person["token"],
+        "called_name":  next_person["name"],
+        "remaining":    remaining
+    }), 200
+
+
+# ── Admin: mark specific token as done ───────────────────────────
+@app.route("/admin/mark-done", methods=["POST"])
+def mark_done():
+    data = request.get_json()
+    if not data or data.get("password") != ADMIN_PASSWORD:
+        return jsonify({"status": "failed", "error": "Unauthorized"}), 401
+
+    token = data.get("token")
+    entry = next((p for p in queue if p["token"] == token), None)
+    if not entry:
+        return jsonify({"status": "failed", "error": "Token not found"}), 404
+
+    entry["status"] = "done"
+    entry["called_at"] = datetime.now().strftime("%I:%M %p")
+
+    return jsonify({"status": "success", "message": f"Token {token} marked as done"}), 200
+
+
+# ── Admin: reset queue ────────────────────────────────────────────
+@app.route("/admin/reset", methods=["POST"])
+def reset_queue():
+    global queue, token_counter
+    data = request.get_json()
+    if not data or data.get("password") != ADMIN_PASSWORD:
+        return jsonify({"status": "failed", "error": "Unauthorized"}), 401
+
+    queue         = []
+    token_counter = 0
+
+    return jsonify({"status": "success", "message": "Queue reset successfully"}), 200
+
+
+# ── Admin: update crowd manually ─────────────────────────────────
+@app.route("/admin/crowd", methods=["POST"])
+def admin_crowd():
+    data = request.get_json()
+    if not data or data.get("password") != ADMIN_PASSWORD:
+        return jsonify({"status": "failed", "error": "Unauthorized"}), 401
+
+    live_crowd["count"]      = int(data.get("count", 0))
+    live_crowd["updated_at"] = datetime.now().strftime("%I:%M:%S %p")
+
+    return jsonify({
+        "status":     "success",
+        "count":      live_crowd["count"],
+        "updated_at": live_crowd["updated_at"]
     }), 200
 
 
