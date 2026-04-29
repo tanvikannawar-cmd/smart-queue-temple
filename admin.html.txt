@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Temple Admin Panel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --saffron:#E8640A; --deep-saffron:#C4500A;
+      --gold:#D4A017;    --gold-light:#F2C84B;
+      --cream:#FDF6E3;   --brown-dark:#2C1A0E;
+      --brown-mid:#5C3317; --maroon:#7B1E1E;
+      --green-sacred:#2D5016; --white-pure:#FFFEF9;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Crimson Pro',Georgia,serif;background:var(--brown-dark);color:var(--cream);min-height:100vh;}
+    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(232,100,10,.12) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(212,160,23,.10) 0%,transparent 50%);pointer-events:none;z-index:0;}
+    .container{position:relative;z-index:1;max-width:700px;margin:0 auto;padding:36px 20px 60px;}
+
+    header{text-align:center;margin-bottom:32px;}
+    .om{font-size:2rem;color:var(--gold);display:block;margin-bottom:6px;animation:glow 3s ease-in-out infinite alternate;}
+    @keyframes glow{from{filter:drop-shadow(0 0 8px rgba(212,160,23,.4))}to{filter:drop-shadow(0 0 22px rgba(232,100,10,.7))}}
+    h1{font-family:'Cinzel',serif;font-size:clamp(1.3rem,4vw,2rem);color:var(--gold-light);letter-spacing:.08em;}
+    .subtitle{margin-top:6px;font-size:.95rem;font-style:italic;color:rgba(253,246,227,.5);}
+
+    .card{background:linear-gradient(145deg,rgba(92,51,23,.45),rgba(44,26,14,.8));border:1px solid rgba(212,160,23,.2);border-radius:16px;padding:32px;box-shadow:0 4px 40px rgba(0,0,0,.5);}
+
+    .form-group{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+    label{font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);}
+    .input-wrap{position:relative;}
+    .input-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:1rem;pointer-events:none;opacity:.65;}
+    input{width:100%;padding:12px 13px 12px 38px;background:rgba(44,26,14,.7);border:1px solid rgba(212,160,23,.22);border-radius:8px;color:var(--cream);font-family:'Crimson Pro',serif;font-size:1.05rem;transition:all .22s;}
+    input:focus{outline:none;border-color:var(--gold);background:rgba(92,51,23,.5);box-shadow:0 0 0 3px rgba(212,160,23,.1);}
+    input::placeholder{color:rgba(253,246,227,.28);}
+
+    .btn{width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--saffron),var(--deep-saffron));color:var(--white-pure);font-family:'Cinzel',serif;font-size:.92rem;font-weight:600;letter-spacing:.1em;cursor:pointer;transition:all .28s;position:relative;overflow:hidden;box-shadow:0 4px 20px rgba(232,100,10,.4);margin-bottom:12px;}
+    .btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--gold),var(--saffron));opacity:0;transition:opacity .28s;}
+    .btn:hover::before{opacity:1;} .btn:hover{transform:translateY(-2px);} .btn:active{transform:translateY(0);}
+    .btn span{position:relative;z-index:1;}
+    .btn.green{background:linear-gradient(135deg,#2d7a2d,#1a5c1a);box-shadow:0 4px 20px rgba(45,122,45,.4);}
+    .btn.green::before{background:linear-gradient(135deg,#3a9c3a,#2d7a2d);}
+    .btn.red{background:linear-gradient(135deg,#7a2d2d,#5c1a1a);box-shadow:0 4px 20px rgba(122,45,45,.4);}
+    .btn.red::before{background:linear-gradient(135deg,#9c3a3a,#7a2d2d);}
+    .btn.loading span::after{content:'';display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;margin-left:9px;vertical-align:middle;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .err{margin-top:14px;padding:12px 16px;background:rgba(123,30,30,.3);border:1px solid rgba(200,60,60,.3);border-radius:9px;color:#f08080;font-size:.93rem;display:none;}
+    .err.show{display:block;}
+
+    #admin-section{display:none;}
+
+    .current-token{text-align:center;background:linear-gradient(135deg,rgba(45,80,22,.4),rgba(30,60,15,.6));border:1px solid rgba(100,180,50,.3);border-radius:14px;padding:24px;margin-bottom:24px;}
+    .ct-label{font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:#90d060;margin-bottom:8px;}
+    .ct-token{font-family:'Cinzel',serif;font-size:4rem;font-weight:700;line-height:1;background:linear-gradient(135deg,#90d060,var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .ct-name{font-size:1.3rem;color:var(--cream);margin-top:6px;}
+    .ct-empty{font-size:1.1rem;font-style:italic;color:rgba(253,246,227,.35);}
+
+    .stats-row{display:flex;gap:14px;margin-bottom:24px;}
+    .stat-box{flex:1;text-align:center;background:rgba(92,51,23,.35);border:1px solid rgba(212,160,23,.15);border-radius:10px;padding:14px 10px;}
+    .stat-box .val{font-family:'Cinzel',serif;font-size:2rem;font-weight:700;color:var(--gold-light);line-height:1;}
+    .stat-box .lbl{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(253,246,227,.45);margin-top:5px;}
+
+    .crowd-control{background:rgba(44,26,14,.5);border:1px solid rgba(212,160,23,.15);border-radius:12px;padding:20px;margin-bottom:24px;}
+    .crowd-control h3{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+    .crowd-buttons{display:flex;align-items:center;justify-content:center;gap:16px;}
+    .crowd-num{font-family:'Cinzel',serif;font-size:2.5rem;font-weight:700;color:var(--gold-light);min-width:80px;text-align:center;}
+    .crowd-btn{width:52px;height:52px;border:none;border-radius:50%;font-size:1.8rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
+    .crowd-btn.minus{background:rgba(123,30,30,.5);border:1px solid rgba(200,60,60,.3);color:#f08080;}
+    .crowd-btn.plus{background:rgba(45,80,22,.5);border:1px solid rgba(100,180,50,.3);color:#90d060;}
+    .crowd-btn:hover{transform:scale(1.1);}
+
+    .queue-section h3{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+    .q-item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(92,51,23,.25);border:1px solid rgba(212,160,23,.12);border-radius:10px;margin-bottom:8px;}
+    .q-info{display:flex;align-items:center;gap:12px;}
+    .q-token{font-family:'Cinzel',serif;font-size:1.1rem;font-weight:600;color:var(--gold-light);}
+    .q-name{font-size:1rem;color:var(--cream);}
+    .q-time{font-size:.82rem;font-style:italic;color:rgba(253,246,227,.4);}
+    .done-btn{padding:7px 14px;border:none;border-radius:7px;background:rgba(45,80,22,.5);border:1px solid rgba(100,180,50,.3);color:#90d060;font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+    .done-btn:hover{background:rgba(45,80,22,.8);}
+    .empty-q{text-align:center;padding:24px;font-style:italic;color:rgba(253,246,227,.35);}
+
+    .divider{display:flex;align-items:center;gap:12px;margin:20px 0;}
+    .divider-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(212,160,23,.3),transparent);}
+
+    footer{text-align:center;margin-top:38px;font-size:.82rem;font-style:italic;color:rgba(253,246,227,.22);}
+
+    @media(max-width:500px){
+      .stats-row{flex-direction:column;}
+      .card{padding:20px 14px;}
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <span class="om">🕉</span>
+    <h1>Temple Admin Panel</h1>
+    <p class="subtitle">Staff access only · Manage the queue</p>
+  </header>
+
+  <!-- LOGIN -->
+  <div class="card" id="login-section">
+    <div class="form-group">
+      <label for="password">Staff Password</label>
+      <div class="input-wrap">
+        <span class="input-icon">🔐</span>
+        <input type="password" id="password" placeholder="Enter staff password"
+          onkeydown="if(event.key==='Enter') login()"/>
+      </div>
+    </div>
+    <button class="btn" onclick="login()"><span>🔓 &nbsp; Login</span></button>
+    <div class="err" id="login-err"></div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="admin-section">
+
+    <div class="current-token" id="current-token-box">
+      <div class="ct-label">Now Serving</div>
+      <div class="ct-empty" id="ct-empty">No one called yet</div>
+      <div id="ct-info" style="display:none;">
+        <div class="ct-token" id="ct-token">--</div>
+        <div class="ct-name" id="ct-name">--</div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box"><div class="val" id="stat-waiting">0</div><div class="lbl">Waiting</div></div>
+      <div class="stat-box"><div class="val" id="stat-served">0</div><div class="lbl">Served Today</div></div>
+      <div class="stat-box"><div class="val" id="stat-crowd">0</div><div class="lbl">Live Count</div></div>
+    </div>
+
+    <button class="btn green" id="call-btn" onclick="callNext()">
+      <span>📢 &nbsp; Call Next Person</span>
+    </button>
+
+    <div class="crowd-control">
+      <h3>👥 Update Crowd Count Manually</h3>
+      <div class="crowd-buttons">
+        <button class="crowd-btn minus" onclick="changeCrowd(-1)">−</button>
+        <div class="crowd-num" id="crowd-num">0</div>
+        <button class="crowd-btn plus" onclick="changeCrowd(+1)">+</button>
+      </div>
+      <button class="btn" style="margin-top:14px;" onclick="sendCrowd()">
+        <span>📡 &nbsp; Send Count to Live App</span>
+      </button>
+    </div>
+
+    <div class="queue-section">
+      <h3>📋 People Waiting</h3>
+      <div id="queue-items"><div class="empty-q">Loading...</div></div>
+    </div>
+
+    <div class="divider"><div class="divider-line"></div></div>
+
+    <button class="btn red" onclick="resetQueue()">
+      <span>🔄 &nbsp; Reset Entire Queue (End of Day)</span>
+    </button>
+
+  </div>
+
+  <footer>Temple Queue Management System &nbsp;·&nbsp; Admin Access</footer>
+</div>
+
+<script>
+  const API = 'https://temple-queue-prediction.onrender.com';
+  let PASSWORD    = '';
+  let crowdCount  = 0;
+  let servedCount = 0;
+
+  async function login() {
+    const pwd   = document.getElementById('password').value;
+    const errEl = document.getElementById('login-err');
+    errEl.classList.remove('show');
+    if (!pwd) { errEl.textContent = '⚠️ Please enter password.'; errEl.classList.add('show'); return; }
+    try {
+      const res  = await fetch(API + '/admin/login', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ password: pwd })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        PASSWORD = pwd;
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('admin-section').style.display = 'block';
+        loadQueue();
+        setInterval(loadQueue, 10000);
+      } else {
+        errEl.textContent = '⚠️ Wrong password. Try again.';
+        errEl.classList.add('show');
+      }
+    } catch {
+      errEl.textContent = '⚠️ Cannot connect to server.';
+      errEl.classList.add('show');
+    }
+  }
+
+  async function callNext() {
+    const btn = document.getElementById('call-btn');
+    btn.classList.add('loading'); btn.disabled = true;
+    try {
+      const res  = await fetch(API + '/admin/call-next', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ password: PASSWORD })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        document.getElementById('ct-empty').style.display = 'none';
+        document.getElementById('ct-info').style.display  = 'block';
+        document.getElementById('ct-token').textContent   = 'T-' + data.called_token;
+        document.getElementById('ct-name').textContent    = data.called_name;
+        servedCount++;
+        document.getElementById('stat-served').textContent = servedCount;
+        loadQueue();
+      } else { alert(data.error || 'No one in queue!'); }
+    } catch { alert('Cannot connect to server.'); }
+    finally { btn.classList.remove('loading'); btn.disabled = false; }
+  }
+
+  async function markDone(token) {
+    try {
+      const res  = await fetch(API + '/admin/mark-done', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ password: PASSWORD, token: token })
+      });
+      const data = await res.json();
+      if (data.status === 'success') { servedCount++; loadQueue(); }
+      else alert(data.error);
+    } catch { alert('Cannot connect to server.'); }
+  }
+
+  async function loadQueue() {
+    try {
+      const res  = await fetch(API + '/queue/status');
+      const data = await res.json();
+      document.getElementById('stat-waiting').textContent = data.total_waiting;
+      document.getElementById('stat-served').textContent  = servedCount;
+
+      const crowd = await fetch(API + '/crowd/live');
+      const cd    = await crowd.json();
+      document.getElementById('stat-crowd').textContent = cd.count;
+      crowdCount = cd.count;
+      document.getElementById('crowd-num').textContent   = crowdCount;
+
+      const container = document.getElementById('queue-items');
+      if (data.total_waiting === 0) {
+        container.innerHTML = '<div class="empty-q">🙏 No one is waiting right now</div>';
+      } else {
+        container.innerHTML = data.queue.map(p => `
+          <div class="q-item">
+            <div class="q-info">
+              <span class="q-token">T-${p.token}</span>
+              <div>
+                <div class="q-name">${p.name}</div>
+                <div class="q-time">Joined at ${p.joined_at}</div>
+              </div>
+            </div>
+            <button class="done-btn" onclick="markDone(${p.token})">✅ Done</button>
+          </div>
+        `).join('');
+      }
+    } catch { console.log('Error loading queue'); }
+  }
+
+  function changeCrowd(delta) {
+    crowdCount = Math.max(0, crowdCount + delta);
+    document.getElementById('crowd-num').textContent = crowdCount;
+  }
+
+  async function sendCrowd() {
+    try {
+      const res  = await fetch(API + '/admin/crowd', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ password: PASSWORD, count: crowdCount })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        document.getElementById('stat-crowd').textContent = crowdCount;
+        alert('✅ Crowd count updated to ' + crowdCount);
+      }
+    } catch { alert('Cannot connect to server.'); }
+  }
+
+  async function resetQueue() {
+    if (!confirm('Are you sure you want to reset the entire queue?')) return;
+    try {
+      const res  = await fetch(API + '/admin/reset', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ password: PASSWORD })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        servedCount = 0;
+        document.getElementById('ct-empty').style.display = 'block';
+        document.getElementById('ct-info').style.display  = 'none';
+        loadQueue();
+        alert('✅ Queue reset successfully!');
+      }
+    } catch { alert('Cannot connect to server.'); }
+  }
+</script>
+</body>
+</html>
